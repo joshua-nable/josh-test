@@ -1,0 +1,44 @@
+def docker_creds = 'c8dbaab7-9d00-447a-bc31-198d947a1967'
+def git_creds = '93b2a9b8-1201-4fcc-add9-2cbdfdc2b3c5'
+node('jenkins-slave') {
+    withCredentials([
+      [$class: 'UsernamePasswordMultiBinding', credentialsId: docker_creds, usernameVariable: 'DOC_USER', passwordVariable: 'DOC_PASS'],
+    ]){
+     stage('build pipeline') {
+        sh(script: """
+           git clone https://github.com/Elros-Virtual/$appname.git
+           
+           cd ./$appname
+
+           docker login -u ${DOC_USER} -p ${DOC_PASS}
+
+           docker build -f $appname.dockerfile -t elrosvirtual/$appname:${env.BUILD_ID} .
+
+           docker push elrosvirtual/$appname:${env.BUILD_ID}
+
+        """)
+    }
+    }
+    withCredentials([
+      [$class: 'UsernamePasswordMultiBinding', credentialsId: git_creds, usernameVariable: 'GiT_USER', passwordVariable: 'GIT_PASS'],
+    ]){
+      stage('deploy pipeline') {
+        sh(script: """      
+           git clone https://github.com/Elros-Virtual/infrastructure.git
+
+           cd ./infrastructure/kubernetes/deployments/$appname
+           
+           sed -i 's/$appname:.*/$appname:${env.BUILD_ID}/g' $appname.yaml
+           
+           git config user.email 'iar31.roberts@gmail.com'
+           
+           git config user.name 'iar31.roberts@gmail.com'
+           
+           git commit -a -m "updating tag"
+           
+           git push https://${GiT_USER}:${GIT_PASS}@github.com/Elros-Virtual/infrastructure.git
+           
+        """)
+    }
+    }
+}

@@ -1,0 +1,54 @@
+---
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+        name: $appname
+    spec:
+        selector:
+            matchLabels:
+                app: $appname
+        replicas: 1
+        template:
+            metadata:
+                labels:
+                    app: $appname
+            spec:
+                containers: 
+                - name: $appname
+                  image: elrosvirtual/$appname:$tag
+                  imagePullPolicy: Always
+
+
+---
+    apiVersion: v1
+    kind: Service
+    metadata:
+        name: $appname-svc
+    spec:
+        selector:
+            app: $appname
+        ports:
+            -
+                name: http
+                port: 80
+                targetPort: 5000
+                protocol: TCP
+
+---
+    apiVersion: networking.k8s.io/v1beta1
+    kind: Ingress
+    metadata:
+        name: $appname-ingress
+    spec:
+        tls:
+        - hosts:
+          - $hostname
+          secretName: $appname-app-tls
+        rules:
+        - host: $hostname
+          http:
+            paths:
+            - path: /
+              backend:
+                serviceName: $appname-svc
+                servicePort: 80
