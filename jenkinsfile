@@ -6,15 +6,13 @@ node('jenkins-slave') {
     ]){
      stage('build pipeline') {
         sh(script: """
-           git clone https://github.com/Elros-Virtual/$appname.git
-           
-           cd ./$appname
+           git clone https://github.com/Elros-Virtual/josh-test
 
            docker login -u ${DOC_USER} -p ${DOC_PASS}
 
-           docker build -f $appname.dockerfile -t elrosvirtual/$appname:${env.BUILD_ID} .
+           docker build -f flask-jb.dockerfile -t elrosvirtual/josh-test:${env.BUILD_ID} .
 
-           docker push elrosvirtual/$appname:${env.BUILD_ID}
+           docker push elrosvirtual/josh-test:${env.BUILD_ID}
 
         """)
     }
@@ -26,9 +24,9 @@ node('jenkins-slave') {
         sh(script: """      
            git clone https://github.com/Elros-Virtual/infrastructure.git
 
-           cd ./infrastructure/kubernetes/deployments/$appname
+           cd ./infrastructure/kubernetes/deployments/josh-test
            
-           sed -i 's/$appname:.*/$appname:${env.BUILD_ID}/g' $appname.yaml
+           sed -i 's/josh-test:.*/josh-test:${env.BUILD_ID}/g' josh-test.yaml
            
            git config user.email 'iar31.roberts@gmail.com'
            
